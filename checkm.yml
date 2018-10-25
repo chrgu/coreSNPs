@@ -1,0 +1,3 @@
+# certain python2-specific version
+dependencies:
+  - checkm-genome 

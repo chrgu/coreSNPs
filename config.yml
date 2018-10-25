@@ -1,0 +1,9 @@
+#
+# coreSNPs configuration file
+#
+
+root: /home/chunyu/coresnps_testdata
+data_fp: 0_contigs
+filename_fmt: fasta
+
+samplelist_fp: "samples.txt"
