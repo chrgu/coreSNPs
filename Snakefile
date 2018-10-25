@@ -112,7 +112,7 @@ rule run_roary:
    input:
      expand(config['root']+'/2_prokka/prokka_{sample}/{sample}.gff', sample=SAMPLES)
    output: 
-     config['root']+'/3_roary_results/roary.done'
+     config['root']+'/3_roary.done'
    params: 
      outdir = config['root']+'/3_roary_results/'
    threads:
