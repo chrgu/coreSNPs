@@ -1,6 +1,8 @@
 # coreSNPs
 
-In the [pitfalls paper](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-017-0267-5), we domentrated the benefits of using positive controls in shotgun metagenomics sequencing for high-volume analysis. In particular, we used a marine Vibrio species (Vibrio campbellii) for all of our HiSeq runs at PCMP. Due to the high sequencing coverage and low diversity of the positive control samples, we are able to de novo assemble the Vibrio campbellii genome, and study the distributuion of the SNPs for the same genome being sequenced multiple times.
+In the [pitfalls paper](https://microbiomejournal.biomedcentral.com/articles/10.1186/s40168-017-0267-5), we demonstrated the benefits of using positive controls in shotgun metagenomics sequencing for high-volume analysis. In particular, we used a marine Vibrio species (Vibrio campbellii) for all of our HiSeq runs at PCMP. Due to the high sequencing coverage and low diversity of the positive control samples, we are able to de novo assemble the Vibrio campbellii genome, and study the distributuion of the SNPs for the same genome being sequenced multiple times.
+
+MAG: metagenome-assembled genomes
 
 In this repo, we start with assembled and taxonomically annotated contigs from [sunbeam](https://github.com/sunbeam-labs/sunbeam) pipeline:
 
