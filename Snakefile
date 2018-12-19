@@ -50,14 +50,14 @@ rule checkm_dataset:
   shell:
     """
     path_db="{params.conda_prefix}/opt/checkm_data"
-    mkdir -p "$path_db"
+    mkdir -p $path_db
     
     if [ ! -d $path_db/genome_tree ]; then
-        wget https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -P "{params.conda_prefix}/opt"
-        tar -xzf "{params.conda_prefix}/opt/checkm_data_2015_01_16.tar.gz" -C "$path_db"
+        wget https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz -P {params.conda_prefix}/opt
+        tar -xzf {params.conda_prefix}/opt/checkm_data_2015_01_16.tar.gz -C $path_db
     fi
     
-    ln -sf "$path_db" "{output}"
+    ln -sf $path_db {output}
     """
 
 rule run_checkm:
