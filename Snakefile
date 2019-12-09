@@ -1,15 +1,11 @@
-#
-# coreSNPs
-#
-# Author: Chunyu Zhao <zhaoc1@email.chop.edu>
-# Created: 2018-10-24
-#
-
 import sys
 import os
 from pathlib import Path
 import argparse
 from snakemake.utils import listfiles
+
+import warnings
+warnings.filterwarnings('ignore')
 
 def read_samples(filepath):
   with open(filepath) as f:
@@ -39,10 +35,22 @@ rule list_samples:
 SAMPLES = read_samples( config['root'] + '/' + config['samplelist_fp'] )
 CONDA_PREFIX = os.getenv("CONDA_PREFIX")
 
+rule run_all:
+	input:
+		ancient(config['root']+'/1_checkm/checkm_data'),
+		config['root']+'/1_checkm/checkm_results/checkm_results.tsv',
+		config['root'] + '/3_roary.done',
+		config['root']+'/3_roary_results/snps_cat/all.snp_cat.aln',
+		config['root']+'/3_roary_results/core_gene_alignment.newick'
+
+		
+		
+
 #### make sure checkM has downloaded its precalculated data files
+
 rule checkm_dataset:
   output:
-    ancient(config['root']+'/1_checkm/checkm_data')
+    directory(config['root']+'/1_checkm/checkm_data')
   conda:
     "checkm.yml"
   params:
@@ -105,20 +113,124 @@ rule run_prokka:
    shell:
      """
      prokka --kingdom Bacteria --outdir {params.outdir} --prefix {params.sample} \
-            --locustag {params.sample} --force {input}
+            --locustag {params.sample} --force {input} --cpus {threads}
      """
 
 rule run_roary:
    input:
      expand(config['root']+'/2_prokka/prokka_{sample}/{sample}.gff', sample=SAMPLES)
    output: 
-     config['root']+'/3_roary.done'
+     fin = config['root'] + '/3_roary.done'
    params: 
-     outdir = config['root']+'/3_roary_results/'
+     outdir = config['root']+'/3_roary_results/',
    threads:
-     8
+     32
    shell:
      """
-     roary -p {threads} -f {params.outdir} -z -e -n -v {input} && touch {output}
+     roary -p {threads} -f {params.outdir} -z -e -n -v {input} && touch {output.fin}
      """
 
+
+####################
+rule run_snps:
+	input:
+		config['root']+'/3_roary_results/snps_cat/all.snp_cat.aln'
+
+
+rule create_core_tree_newick:
+	input:
+		config['root'] + '/3_roary.done'		
+	output:
+	  config['root']+'/3_roary_results/core_gene_alignment.newick'
+	params:
+		config['root']+'/3_roary_results/core_gene_alignment.aln'
+	shell:
+	  """
+	  FastTree -nt -gtr {params} > {output}
+      """
+	  
+rule extract_core_genes:
+	input:
+		config['root'] + '/3_roary.done',
+	output:
+		config['root']+'/3_roary_results/core_genes.txt'
+	params:
+		presab = config['root']+'/3_roary_results/gene_presence_absence.Rtab'
+	script:
+		config['r_script'] + '/extract_core_genes.R'
+
+rule preparing_data:
+	input:
+		core = config['root']+'/3_roary_results/core_genes.txt'
+	output:
+		config['root']+'/3_roary_results/core_clustered_proteins'
+	params:
+		reference = config['root']+'/3_roary_results/pan_genome_reference.fa',
+		cluster = config['root']+'/3_roary_results/clustered_proteins',
+		header = config['root']+'/3_roary_results/pan_genome_reference.header'
+	shell:
+		"""
+		grep -Fwf {input.core}  {params.cluster} > {output}
+		samtools faidx {params.reference}
+		grep ">" {params.reference}  > {params.header}
+		"""
+
+rule core_genes_per_sample:
+	input:
+		config['root']+'/3_roary_results/core_clustered_proteins'
+	output:
+		config['root']+'/3_roary_results/gene_sample_name.txt'
+	script:
+		config['r_script'] + '/core_genes_per_sample.R'
+
+
+rule call_core_snps:
+	input:
+		config['root']+'/3_roary_results/core_genes.txt'
+	output:
+		touch(config['root']+'/3_roary_results/snps.done'),
+		snps = directory(config['root']+'/3_roary_results/snps'),
+		snp_cat = directory(config['root']+'/3_roary_results/snps_cat'),
+
+	params:
+		pans = directory(config['root']+'/3_roary_results/pan_genome_sequences'),
+	shell:
+		"""
+		mkdir {output.snps}
+		for gene in `cat {input}`; do
+			ls {params.pans}/$gene.fa.aln
+			snp-sites -mvpc -o {output.snps}/$gene {params.pans}/$gene.fa.aln || true
+		done
+		mkdir {output.snp_cat}
+		"""
+
+		
+rule concatenate_core_snps:
+	input:
+		config['root']+'/3_roary_results/snps.done',
+		core = config['root']+'/3_roary_results/core_genes.txt',
+		gene_sample = config['root']+'/3_roary_results/gene_sample_name.txt'
+	output:
+		touch(config['root']+'/3_roary_results/snps_cat.done')
+	params:
+		snps = directory(config['root']+'/3_roary_results/snps'),
+		snps_cat = directory(config['root']+'/3_roary_results/snps_cat')
+	threads:
+		32
+	script:
+		config['r_script'] + '/concatenate_core_snps.R'
+
+rule all_core_snps:
+	input:
+		touch(config['root']+'/3_roary_results/snps_cat.done')
+	output:
+		config['root']+'/3_roary_results/snps_cat/all.snp_cat.aln'
+	params:
+		snps_cat = directory(config['root']+'/3_roary_results/snps_cat')		
+	shell:
+		"""
+			cat {params.snps_cat}/* > {output}
+		"""
+		
+		
+		

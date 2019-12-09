@@ -2,8 +2,9 @@
 # coreSNPs configuration file
 #
 
-root: /home/chunyu/coresnps_testdata
+root: /home/chgu/projects/myco/15_newCanu/pangenome
 data_fp: 0_contigs
 filename_fmt: fasta
+r_script: /home/chgu/coreSNPs/r_scripts
 
-samplelist_fp: "samples.txt"
+samplelist_fp: "samples.csv"
